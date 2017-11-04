@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Use correct character set. -->
+  <meta charset="utf-8">
+  <!-- Tell IE to use the latest, best version. -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+  <title>Wine Country Fires - GOES</title>
+  <script src="../Build/Cesium/Cesium.js"></script>
+  <style>
+      @import url(../Build/Cesium/Widgets/widgets.css);
+      html, body, #cesiumContainer {
+          width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+      }
+  </style>
+</head>
+<body>
+  <div id="cesiumContainer"></div>
+  <script>
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+      scene3DOnly: true,
+      selectionIndicator: false,
+      baseLayerPicker: false,
+      //terrainProvider: terrainProvider,
+      terrainExaggeration: 1.5
+    });
+
+    var cesiumTerrainProviderMeshes = new Cesium.CesiumTerrainProvider({
+        url : 'https://assets.agi.com/stk-terrain/v1/tilesets/world/tiles',
+        requestWaterMask : false,
+        requestVertexNormals : true
+    });
+    viewer.terrainProvider = cesiumTerrainProviderMeshes;
+
+    // Create an initial camera view
+    var initialPosition = new Cesium.Cartesian3.fromDegrees(-122.2, 37.1, 80000);
+    var initialOrientation = new Cesium.HeadingPitchRoll.fromDegrees(350, -35, 0);
+    var homeCameraView = {
+        destination : initialPosition,
+        orientation : {
+            heading : initialOrientation.heading,
+            pitch : initialOrientation.pitch,
+            roll : initialOrientation.roll
+        }
+    };
+
+    // Add some camera flight animation options
+    homeCameraView.duration = 2.0;
+    homeCameraView.maximumHeight = 40000;
+    homeCameraView.pitchAdjustHeight = 40000;
+    homeCameraView.endTransform = Cesium.Matrix4.IDENTITY;
+    // Override the default home button
+    viewer.homeButton.viewModel.command.beforeExecute.addEventListener(function (e) {
+        e.cancel = true;
+        viewer.scene.camera.flyTo(homeCameraView);
+    });
+
+    // Set up clock and timeline.
+    viewer.clock.shouldAnimate = false; // default
+    viewer.clock.startTime = Cesium.JulianDate.fromIso8601("2017-10-09T03:00:00Z");
+    viewer.clock.stopTime = Cesium.JulianDate.fromIso8601("2017-10-09T18:00:00Z");
+    viewer.clock.currentTime = Cesium.JulianDate.fromIso8601("2017-10-09T03:00:00Z");
+    viewer.clock.multiplier = 2000; // sets a speedup
+    viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK_MULTIPLIER; // tick computation mode
+    viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; // loop at the end
+    viewer.timeline.zoomTo(viewer.clock.startTime, viewer.clock.stopTime); // set visible range
+
+    // Set the initial view
+    viewer.scene.camera.setView(homeCameraView);
+
+    var kmlOptions = {
+        camera : viewer.scene.camera,
+        canvas : viewer.scene.canvas,
+        clampToGround : true
+    };
+    // Load geocache points of interest from a KML file
+    // Data from : http://catalog.opendata.city/dataset/pediacities-nyc-neighborhoods/resource/91778048-3c58-449c-a3f9-365ed203e914
+    // var geocachePromise = Cesium.KmlDataSource.load('./SampleData/kml/hms_fire20171009_time.kml', kmlOptions);
+
+    // // Add geocache billboard entities to scene and style them
+    // geocachePromise.then(function(dataSource) {
+    //     // Add the new data as entities to the viewer
+    //     viewer.dataSources.add(dataSource);
+    // });
+
+    var geocachePromise = Cesium.KmlDataSource.load('./SampleData/kml/Fire_Points_n1_310deg_utm_buff_timereal.kml', kmlOptions);
+    //var geocachePromise = Cesium.KmlDataSource.load('./SampleData/kml/viirs_daily_20171009_diss_time.kml', kmlOptions);
+
+    // Add geocache billboard entities to scene and style them
+    geocachePromise.then(function(dataSource) {
+        // Add the new data as entities to the viewer
+        viewer.dataSources.add(dataSource);
+    });
+  </script>
+</body>
+</html>
